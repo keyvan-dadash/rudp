@@ -99,13 +99,7 @@ namespace rudp {
 
         rudp::packets::RUDPPacket ack_packet = this->receiver_.recvAckPacket();
 
-
-        std::cout << "wtffffffffffff111111111111111" << std::endl;
-
         std::unique_lock<std::mutex> lk(this->m_);
-
-        std::cout << ack_packet.header_.seq_number << std::endl;
-        std::cout << "wtffffffffffff" << std::endl;
 
         for (int i = 0; i < this->window_.size(); i++) {
 

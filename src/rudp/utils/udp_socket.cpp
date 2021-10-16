@@ -52,14 +52,14 @@ namespace rudp
 
     void UDPSocket::sendPacket(raw_packet_t packet)
     {
-      std::cout << "send" << std::endl;
-      std::cout << packet.buff << std::endl;
+      // std::cout << "send" << std::endl;
+      // std::cout << packet.buff << std::endl;
 
 
       // peer = this->is_server >= 1 ? this->client_peer_ : this->getAddrIn();
 
       // print_ipv4(&(this->client_peer_));
-      print_ipv4(&(packet.client_peer_));
+      // print_ipv4(&(packet.client_peer_));
       sendto(this->fd_, packet.buff.c_str(), packet.buff.size(),
         MSG_CONFIRM, (const struct sockaddr *) &(packet.client_peer_), 
             sizeof(packet.client_peer_));
@@ -68,7 +68,7 @@ namespace rudp
 
     raw_packet_t UDPSocket::recvPacket()
     {
-      std::cout << "recvvv" << std::endl;
+      // std::cout << "recvvv" << std::endl;
       char buffer[MAX_PACKET_SIZE];
       memset(buffer, '\0', MAX_PACKET_SIZE);
       struct sockaddr_in peer = this->getAddrIn();
@@ -81,12 +81,12 @@ namespace rudp
       // if (this->is_server != 2 && this->is_server >= 1) {
       //   memset(&(this->client_peer_), 0, sizeof(this->client_peer_));
       //   this->client_peer_ = peer;
-        print_ipv4(&(peer));
+        // print_ipv4(&(peer));
       //   std::cout << "i am here" << std::endl;
       //   this->is_server = 2;
       // }
 
-      std::cout << buffer << std::endl;
+      // std::cout << buffer << std::endl;
 
       raw_packet_t packet;
 
