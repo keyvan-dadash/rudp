@@ -1,0 +1,9 @@
+
+
+
+#ide folder
+.vscode/
+
+
+#build folder
+build/
