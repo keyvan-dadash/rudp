@@ -2,7 +2,7 @@
 
 
 #include <string>
-
+#include <iostream>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -51,12 +51,15 @@ namespace rudp
     std::string UDPSocket::recvPacket()
     {
       char buffer[MAX_PACKET_SIZE];
+      memset(buffer, '\0', MAX_PACKET_SIZE);
       struct sockaddr_in peer = this->getAddrIn();
 
       unsigned int len = sizeof(peer);
 
-      int nbytes = recvfrom(this->fd_, (char *)buffer, MAX_PACKET_SIZE, 
+      recvfrom(this->fd_, (char *)buffer, MAX_PACKET_SIZE, 
                 MSG_WAITALL, (struct sockaddr *) &peer, &len);
+
+      std::cout << buffer << std::endl;
 
       return std::string(buffer);
     }
