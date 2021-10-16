@@ -17,6 +17,16 @@
 #define MAX_PACKET_SIZE 4096
 
 
+
+void print_ipv4(struct sockaddr_in *saddr)
+{
+  printf("Numeric: %s\n", inet_ntoa(saddr->sin_addr));
+  printf("sin_port: %d\n", saddr->sin_port);
+  printf("saddr = %d, %s: %d\n", saddr->sin_family, inet_ntoa(saddr->sin_addr), saddr->sin_port);
+  printf("s_addr: %d\n", ntohl(saddr->sin_addr.s_addr));
+}
+
+
 namespace rudp
 {
 
@@ -30,26 +40,35 @@ namespace rudp
                   peer_port_(peer_port)
     {
       this->fd_ = socket(AF_INET, SOCK_DGRAM, 0);
+      this->is_server = 0;
     }
 
 
     UDPSocket::UDPSocket(u_int32_t fd) : fd_(fd)
     {
-
+      this->is_server = 0;
     }
 
 
-    void UDPSocket::sendPacket(std::string packet)
+    void UDPSocket::sendPacket(raw_packet_t packet)
     {
-      struct sockaddr_in peer = this->getAddrIn();
-      sendto(this->fd_, packet.c_str(), packet.size(),
-        MSG_CONFIRM, (const struct sockaddr *) &peer, 
-            sizeof(peer));
+      std::cout << "send" << std::endl;
+      std::cout << packet.buff << std::endl;
+
+
+      // peer = this->is_server >= 1 ? this->client_peer_ : this->getAddrIn();
+
+      // print_ipv4(&(this->client_peer_));
+      print_ipv4(&(packet.client_peer_));
+      sendto(this->fd_, packet.buff.c_str(), packet.buff.size(),
+        MSG_CONFIRM, (const struct sockaddr *) &(packet.client_peer_), 
+            sizeof(packet.client_peer_));
     }
 
 
-    std::string UDPSocket::recvPacket()
+    raw_packet_t UDPSocket::recvPacket()
     {
+      std::cout << "recvvv" << std::endl;
       char buffer[MAX_PACKET_SIZE];
       memset(buffer, '\0', MAX_PACKET_SIZE);
       struct sockaddr_in peer = this->getAddrIn();
@@ -58,10 +77,23 @@ namespace rudp
 
       recvfrom(this->fd_, (char *)buffer, MAX_PACKET_SIZE, 
                 MSG_WAITALL, (struct sockaddr *) &peer, &len);
+      
+      // if (this->is_server != 2 && this->is_server >= 1) {
+      //   memset(&(this->client_peer_), 0, sizeof(this->client_peer_));
+      //   this->client_peer_ = peer;
+        print_ipv4(&(peer));
+      //   std::cout << "i am here" << std::endl;
+      //   this->is_server = 2;
+      // }
 
       std::cout << buffer << std::endl;
 
-      return std::string(buffer);
+      raw_packet_t packet;
+
+      packet.buff = buffer;
+      packet.client_peer_ = peer;
+
+      return packet;
     }
 
     struct sockaddr_in UDPSocket::getAddrIn()
@@ -93,6 +125,7 @@ namespace rudp
           perror("bind failed");
           exit(-1);
       }
+
     }
 
 

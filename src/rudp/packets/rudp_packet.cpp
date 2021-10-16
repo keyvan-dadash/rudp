@@ -6,7 +6,9 @@
 
 
 #include <sys/types.h>
-
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "rudp/packets/rudp_packet.hpp"
 
@@ -18,21 +20,25 @@ namespace rudp {
 
 
       RUDPPacket::RUDPPacket(
+        struct sockaddr_in addr,
         rudp_packet_header_t header,
         std::string payload
       ) : header_(header),
-          payload_(payload)
+          payload_(payload),
+          addr(addr)
       {
-        std::cout << this->header_.seq_number << std::endl;
+        // std::cout << this->header_.seq_number << std::endl;
 
         this->whole_packet_ = this->convertHeaderToString() + this->payload_;
 
-        std::cout << this->whole_packet_ << std::endl;
+        // std::cout << this->whole_packet_ << std::endl;
       }
 
       RUDPPacket::RUDPPacket(
+        struct sockaddr_in addr,
         std::string packet
-      ) : whole_packet_(packet)
+      ) : whole_packet_(packet),
+          addr(addr)
       {
 
       }
@@ -77,6 +83,11 @@ namespace rudp {
       bool RUDPPacket::isSameSeq(u_int32_t seqNumber)
       {
         return (this->header_.seq_number == seqNumber);
+      }
+
+      struct sockaddr_in RUDPPacket::getAdd()
+      {
+        return this->addr;
       }
 
       std::string RUDPPacket::convertHeaderToString()

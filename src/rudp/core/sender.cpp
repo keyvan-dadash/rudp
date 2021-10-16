@@ -45,7 +45,12 @@ namespace rudp {
         rudp::packets::RUDPPacket packet = this->sender_buffer_.front();
         this->sender_buffer_.pop();
 
-        this->socket_.sendPacket(std::string(packet.serializePacket()));
+        rudp::utils::raw_packet_t raw_packet;
+
+        raw_packet.buff = packet.serializePacket();
+        raw_packet.client_peer_ = packet.getAdd();
+
+        this->socket_.sendPacket(raw_packet);
       }
     }
 

@@ -2,8 +2,9 @@
 
 #pragma once
 
-
+#include <atomic>
 #include <string>
+#include <mutex>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -19,6 +20,11 @@ namespace rudp
   namespace utils {
 
 
+    typedef struct RawPacket {
+      std::string buff;
+      struct sockaddr_in client_peer_;
+    } raw_packet_t;
+
 
     class UDPSocket
     {
@@ -33,16 +39,17 @@ namespace rudp
         explicit UDPSocket(u_int32_t fd);
 
 
-        void sendPacket(std::string packet);
+        void sendPacket(raw_packet_t packet);
 
 
-        std::string recvPacket();
+        raw_packet_t recvPacket();
 
         void setToListenMode();
 
       private:
 
         u_int32_t fd_;
+        int is_server;
 
         std::string peer_addr_;
         std::string peer_port_;

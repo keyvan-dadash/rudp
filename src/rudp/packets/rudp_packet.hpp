@@ -6,7 +6,8 @@
 
 
 #include <sys/types.h>
-
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 namespace rudp {
 
@@ -27,11 +28,13 @@ namespace rudp {
       public:
 
         explicit RUDPPacket(
+          struct sockaddr_in addr,
           rudp_packet_header_t header,
           std::string payload
         );
 
         explicit RUDPPacket(
+          struct sockaddr_in addr,
           std::string packet
         );
 
@@ -48,12 +51,16 @@ namespace rudp {
 
         bool isSameSeq(u_int32_t seqNumber);
 
+        struct sockaddr_in getAdd();
+
         rudp_packet_header_t header_;
 
         std::string payload_;
       private:
 
         std::string whole_packet_;
+
+        struct sockaddr_in addr;
 
         std::string convertHeaderToString();
 

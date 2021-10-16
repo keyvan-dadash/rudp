@@ -9,6 +9,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <iostream>
+
 #include "rudp/packets/rudp_packet.hpp"
 #include "rudp/utils/udp_socket.hpp"
 #include "rudp/core/sender.hpp"
@@ -94,9 +96,16 @@ namespace rudp {
     void Manager::ack_loop()
     {
       while (true) {
-        std::unique_lock<std::mutex> lk(this->m_);
 
         rudp::packets::RUDPPacket ack_packet = this->receiver_.recvAckPacket();
+
+
+        std::cout << "wtffffffffffff111111111111111" << std::endl;
+
+        std::unique_lock<std::mutex> lk(this->m_);
+
+        std::cout << ack_packet.header_.seq_number << std::endl;
+        std::cout << "wtffffffffffff" << std::endl;
 
         for (int i = 0; i < this->window_.size(); i++) {
 
@@ -125,6 +134,7 @@ namespace rudp {
         header.seq_number = recv_packet.header_.seq_number;
 
         rudp::packets::RUDPPacket ack_packet(
+          recv_packet.getAdd(),
           header,
           std::string("")
         );

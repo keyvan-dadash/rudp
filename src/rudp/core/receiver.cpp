@@ -4,6 +4,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <iostream>
 
 #include "rudp/core/receiver.hpp"
 #include "rudp/packets/rudp_packet.hpp"
@@ -54,11 +55,15 @@ namespace rudp {
     {
       while (true) 
       {
-        std::string packet = this->socket_.recvPacket();
-        rudp::packets::RUDPPacket rudp_packet(packet);
+        std::cout << "wtf" << std::endl;
+        rudp::utils::raw_packet_t raw_packet = this->socket_.recvPacket();
+        std::string packet = raw_packet.buff;
+        rudp::packets::RUDPPacket rudp_packet(raw_packet.client_peer_, packet);
         rudp_packet.marshalPacket();
 
         std::unique_lock<std::mutex> lk(this->m_);
+
+        std::cout << rudp_packet.header_.seq_number << std::endl;
 
         if (rudp_packet.isAckPacket()) {
           this->recv_ack_packet_buffer_.push(rudp_packet);

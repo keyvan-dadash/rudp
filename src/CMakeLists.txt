@@ -8,6 +8,8 @@ set(SOURCES ${SOURCES})
 
 add_executable(${BINARY} ${SOURCES})
 
-target_compile_options(${BINARY} PRIVATE -Wall -Wextra -Wpedantic -g)
+# target_compile_options(${BINARY} PRIVATE -Wall -Wextra -Wpedantic -g)
 
 target_link_libraries(${BINARY} Threads::Threads)
+
+target_link_libraries(${BINARY} PRIVATE atomic)
