@@ -15,6 +15,8 @@
 
 void do_server(rudp::core::Manager& manager, bool start_new);
 
+
+//handle sending message
 void do_client(rudp::core::Manager& manager, struct sockaddr_in peer, bool start_new = false)
 {
   int init_seq = 2423;
@@ -22,6 +24,7 @@ void do_client(rudp::core::Manager& manager, struct sockaddr_in peer, bool start
   std::string msg;
 
 
+  //we should also can recv message from peer
   if (start_new) {
     std::thread recv(do_server, std::ref(manager), false);
     recv.detach();
@@ -32,10 +35,12 @@ void do_client(rudp::core::Manager& manager, struct sockaddr_in peer, bool start
   while (true) 
   {
     msg.clear();
+    //get message
     std::cin >> msg;
 
     rudp::packets::rudp_packet_header_t header;
 
+    //init packet
     header.is_ack = 0;
     header.seq_number = init_seq;
       
@@ -52,6 +57,8 @@ void do_client(rudp::core::Manager& manager, struct sockaddr_in peer, bool start
 
 void do_server(rudp::core::Manager& manager, bool start_new = false)
 {
+
+  //if we are in server mode then we should also can send message to client
   if (start_new) {
     rudp::packets::RUDPPacket packet = manager.recvPacket();
 
@@ -62,6 +69,7 @@ void do_server(rudp::core::Manager& manager, bool start_new = false)
     sender.detach();
   }
 
+  //recv forever
   while (true) 
   {
     rudp::packets::RUDPPacket packet = manager.recvPacket();
@@ -78,6 +86,7 @@ int main(int argc, char *argv[])
 
   rudp::utils::UDPSocket udp_socket(addr, port);
 
+  //pass -1 to first arg if you want operate in server mode
   if (std::stoi(addr) == -1) {
     udp_socket.setToListenMode();
     is_server = true;

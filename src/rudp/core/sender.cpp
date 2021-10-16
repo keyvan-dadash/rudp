@@ -21,7 +21,7 @@ namespace rudp {
 
     }
 
-
+    //push packet to sender buffer
     void SenderManager::sendPacket(rudp::packets::RUDPPacket packet)
     {
       std::unique_lock<std::mutex> lk(this->m_);
@@ -32,6 +32,8 @@ namespace rudp {
       this->cv_.notify_one();
     }
 
+    //loop forever
+    //we should dequeue then send packet after that 
     void SenderManager::startSendLoop()
     {
 

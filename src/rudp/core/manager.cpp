@@ -31,13 +31,17 @@ namespace rudp {
                                                           receiver_(rudp::core::RecvManager(udp_socket))
     {
       this->base.store(INT32_MAX, std::memory_order_seq_cst);
+
+      //threads start here
       this->start_manager();
     }
 
 
-
+    //send packet
+    //this is user api's
     void Manager::sendPacket(rudp::packets::RUDPPacket packet, bool take_mutex)
     {
+      //check if window is already full
       if (this->window_.size() >= MAX_WINDOW_SIZE) {
         std::cout << "WARNING: Cannot send more packet because window is full" << std::endl;
         return;
@@ -51,6 +55,7 @@ namespace rudp {
         this->base.store(packet.header_.seq_number, std::memory_order_seq_cst);
       }
 
+      //we use this if we want flush and send again whole windows
       if (take_mutex)
         std::unique_lock<std::mutex> lk(this->m_);
 
@@ -61,6 +66,10 @@ namespace rudp {
       this->window_.push_back(packet_s);
     }
 
+    //recv packet
+    //user api recv packet
+    //it will wait until there is packet for recv
+    //it will get packet from queue not directly from socket
     rudp::packets::RUDPPacket Manager::recvPacket()
     {
       std::unique_lock<std::mutex> lk(this->recv_m_);
@@ -75,6 +84,9 @@ namespace rudp {
       return packet;
     }
 
+    //when timer is up
+    //we should send all packet in then windows
+    //becuase we couldn't recv ack
     void Manager::flushAndSendAgain()
     {
       std::vector<rudp::core::PacketStatus> temp;
@@ -88,6 +100,7 @@ namespace rudp {
     }
 
 
+    //timer for chekcing if packet ack not recved
     void Manager::timer_loop()
     {
       while (true)
@@ -103,6 +116,8 @@ namespace rudp {
 
         if (this->window_.empty()) continue;
 
+        //first packet inside windows is older one
+        //so for simplity we only compare older packet with timer
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now_ms - this->window_[0].created_time).count() > MAX_WAIT_MS) {
           this->flushAndSendAgain();
         }
@@ -138,6 +153,8 @@ namespace rudp {
     }
 
 
+    //recv packets
+    //and send acks
     void Manager::send_ack_loop()
     {
       while(true)
@@ -158,6 +175,7 @@ namespace rudp {
         //   this->recv_cv_.notify_all();
         //   continue;
         // }
+
 
         if (this->base.load(std::memory_order_seq_cst) >= recv_packet.header_.seq_number)
           header.seq_number = recv_packet.header_.seq_number;
@@ -180,10 +198,19 @@ namespace rudp {
     void Manager::start_manager()
     {
 
+      //sender thread for sending packet
       std::thread sender_thread(&rudp::core::SenderManager::startSendLoop, &(this->sender_));
+
+      //recv thread for recving packets
       std::thread recv_thread(&rudp::core::RecvManager::startRecvLoop, &(this->receiver_));
+
+      //timer thread for resend if ack not recved in time
       std::thread timer_thread(&rudp::core::Manager::timer_loop, this);
+
+      //recv ack thread
       std::thread recv_ack_thread(&rudp::core::Manager::ack_loop, this);
+
+      //send ack thread
       std::thread send_ack_thread(&rudp::core::Manager::send_ack_loop, this);
 
       sender_thread.detach();

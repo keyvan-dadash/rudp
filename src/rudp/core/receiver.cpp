@@ -19,6 +19,8 @@ namespace rudp {
 
     }
 
+    //recv normal packet.
+    //usually data
     rudp::packets::RUDPPacket RecvManager::recvPacket()
     {
       std::unique_lock<std::mutex> lk(this->m_);
@@ -35,6 +37,7 @@ namespace rudp {
       return packet;
     }
 
+    //we recved ack packet
     rudp::packets::RUDPPacket RecvManager::recvAckPacket()
     {
       std::unique_lock<std::mutex> lk(this->m_);
@@ -51,6 +54,8 @@ namespace rudp {
       return packet;
     }
 
+    //loop forever
+    //get packets from socket we should repeat this.
     void RecvManager::startRecvLoop()
     {
       while (true) 

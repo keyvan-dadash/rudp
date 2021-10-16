@@ -29,6 +29,7 @@ namespace rudp {
       {
         // std::cout << this->header_.seq_number << std::endl;
 
+        //we are goging to create whole message from header and payload
         this->whole_packet_ = this->convertHeaderToString() + this->payload_;
 
         // std::cout << this->whole_packet_ << std::endl;
@@ -40,7 +41,8 @@ namespace rudp {
       ) : whole_packet_(packet),
           addr(addr)
       {
-
+        //here we are given whole message.
+        //we use this if we want marshal message
       }
 
 
@@ -54,11 +56,13 @@ namespace rudp {
         this->payload_ = payload;
       }
       
+      //for sending data through c api's we should pass const char*
       const char* RUDPPacket::serializePacket()
       {
         return this->whole_packet_.c_str();
       }
 
+      //extract header and payload from whole packet
       void RUDPPacket::marshalPacket()
       {
         const char *bytes = this->whole_packet_.c_str();
