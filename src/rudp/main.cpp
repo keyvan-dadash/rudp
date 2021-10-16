@@ -2,6 +2,7 @@
 
 
 #include <iostream>
+#include <thread>
 
 #include <memory.h>
 
@@ -12,11 +13,22 @@
 #include "rudp/core/manager.hpp"
 
 
-void do_client(rudp::core::Manager& manager, struct sockaddr_in peer)
+void do_server(rudp::core::Manager& manager, bool start_new);
+
+void do_client(rudp::core::Manager& manager, struct sockaddr_in peer, bool start_new = false)
 {
   int init_seq = 2423;
 
   std::string msg;
+
+
+  if (start_new) {
+    std::thread recv(do_server, std::ref(manager), false);
+    recv.detach();
+  }
+
+
+
   while (true) 
   {
     msg.clear();
@@ -38,8 +50,18 @@ void do_client(rudp::core::Manager& manager, struct sockaddr_in peer)
   }
 }
 
-void do_server(rudp::core::Manager& manager)
+void do_server(rudp::core::Manager& manager, bool start_new = false)
 {
+  if (start_new) {
+    rudp::packets::RUDPPacket packet = manager.recvPacket();
+
+    std::cout << packet.payload_ << std::endl;
+
+    std::thread sender(do_client, std::ref(manager), packet.getAdd(), false);
+
+    sender.detach();
+  }
+
   while (true) 
   {
     rudp::packets::RUDPPacket packet = manager.recvPacket();
@@ -75,9 +97,9 @@ int main(int argc, char *argv[])
   inet_pton(AF_INET, addr.c_str(), &(peer.sin_addr));
 
   if (is_server) {
-    do_server(manager);
+    do_server(manager, true);
   } else {
-    do_client(manager, peer);
+    do_client(manager, peer, true);
   }
 
 

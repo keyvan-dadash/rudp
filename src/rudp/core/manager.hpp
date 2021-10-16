@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <string>
 #include <vector>
 #include <mutex>
@@ -40,7 +41,7 @@ namespace rudp {
 
 
 
-        void sendPacket(rudp::packets::RUDPPacket packet);
+        void sendPacket(rudp::packets::RUDPPacket packet, bool take_mutex = true);
 
         rudp::packets::RUDPPacket recvPacket();
 
@@ -53,7 +54,7 @@ namespace rudp {
         std::queue<rudp::packets::RUDPPacket> recv_packet_buffer_;
         rudp::core::SenderManager sender_;
         rudp::core::RecvManager receiver_;
-        uint32_t base;
+        std::atomic_int32_t base;
         rudp::utils::UDPSocket socket_;
 
         std::mutex m_;

@@ -19,6 +19,7 @@
 
 
 #define MAX_WAIT_MS 1000
+#define MAX_WINDOW_SIZE 5
 
 namespace rudp {
 
@@ -29,15 +30,29 @@ namespace rudp {
                                                           sender_(rudp::core::SenderManager(udp_socket)),
                                                           receiver_(rudp::core::RecvManager(udp_socket))
     {
+      this->base.store(INT32_MAX, std::memory_order_seq_cst);
       this->start_manager();
     }
 
 
 
-    void Manager::sendPacket(rudp::packets::RUDPPacket packet)
+    void Manager::sendPacket(rudp::packets::RUDPPacket packet, bool take_mutex)
     {
+      if (this->window_.size() >= MAX_WINDOW_SIZE) {
+        std::cout << "WARNING: Cannot send more packet because window is full" << std::endl;
+        return;
+      }
+
+      // std::cout << packet.payload_ << std::endl;
+
       this->sender_.sendPacket(packet);
 
+      if (this->base.load(std::memory_order_seq_cst) > packet.header_.seq_number) {
+        this->base.store(packet.header_.seq_number, std::memory_order_seq_cst);
+      }
+
+      if (take_mutex)
+        std::unique_lock<std::mutex> lk(this->m_);
 
       auto duration = std::chrono::system_clock::now().time_since_epoch();
 
@@ -68,7 +83,7 @@ namespace rudp {
       this->window_.clear();
 
       for (auto &item : temp) {
-        this->sendPacket(item.packet);
+        this->sendPacket(item.packet, false);
       }
     }
 
@@ -83,6 +98,8 @@ namespace rudp {
         auto duration = std::chrono::system_clock::now().time_since_epoch();
 
         auto now_ms = std::chrono::duration_cast< std::chrono::milliseconds >( duration );
+
+        // std::cout << this->window_.size() << std::endl;
 
         if (this->window_.empty()) continue;
 
@@ -101,13 +118,22 @@ namespace rudp {
 
         std::unique_lock<std::mutex> lk(this->m_);
 
-        for (int i = 0; i < this->window_.size(); i++) {
+        // std::cout << this->window_[0].packet.header_.seq_number << std::endl;
 
-          if (this->window_[i].packet.isSameSeq(ack_packet.header_.seq_number)) {
-            this->window_.erase(this->window_.begin() + i);
-            break;
-          }
+        if (this->window_[0].packet.isSameSeq(ack_packet.header_.seq_number)) {
+          this->base.store(ack_packet.header_.seq_number, std::memory_order_seq_cst);
+          this->window_.erase(this->window_.begin());
         }
+
+
+
+        // for (int i = 0; i < this->window_.size(); i++) {
+
+        //   if (this->window_[i].packet.isSameSeq(ack_packet.header_.seq_number)) {
+        //     this->window_.erase(this->window_.begin() + i);
+        //     break;
+        //   }
+        // }
       }
     }
 
@@ -125,7 +151,18 @@ namespace rudp {
         rudp::packets::rudp_packet_header_t header;
 
         header.is_ack = 1;
-        header.seq_number = recv_packet.header_.seq_number;
+
+        //for test
+        // if (recv_packet.header_.seq_number % 2 == 0) {
+        //   lk.unlock();
+        //   this->recv_cv_.notify_all();
+        //   continue;
+        // }
+
+        if (this->base.load(std::memory_order_seq_cst) >= recv_packet.header_.seq_number)
+          header.seq_number = recv_packet.header_.seq_number;
+        else
+          header.seq_number = this->base.load(std::memory_order_seq_cst);
 
         rudp::packets::RUDPPacket ack_packet(
           recv_packet.getAdd(),
